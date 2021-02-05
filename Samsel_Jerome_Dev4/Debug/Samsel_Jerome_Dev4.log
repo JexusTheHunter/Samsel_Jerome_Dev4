@@ -1,0 +1,4 @@
+﻿  Samsel_Jerome_Dev4.cpp
+C:\Users\Kedner Jerome\source\repos\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4.cpp(167,34): warning C4244: '=': conversion from 'UINT' to 'FLOAT', possible loss of data
+C:\Users\Kedner Jerome\source\repos\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4.cpp(168,35): warning C4244: '=': conversion from 'UINT' to 'FLOAT', possible loss of data
+  Samsel_Jerome_Dev4.vcxproj -> C:\Users\Kedner Jerome\source\repos\Samsel_Jerome_Dev4\Debug\Samsel_Jerome_Dev4.exe
