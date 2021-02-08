@@ -1,4 +1,5 @@
 ﻿  Samsel_Jerome_Dev4.cpp
-C:\Users\Kedner Jerome\source\repos\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4.cpp(167,34): warning C4244: '=': conversion from 'UINT' to 'FLOAT', possible loss of data
-C:\Users\Kedner Jerome\source\repos\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4.cpp(168,35): warning C4244: '=': conversion from 'UINT' to 'FLOAT', possible loss of data
-  Samsel_Jerome_Dev4.vcxproj -> C:\Users\Kedner Jerome\source\repos\Samsel_Jerome_Dev4\Debug\Samsel_Jerome_Dev4.exe
+C:\Users\liams\Desktop\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4.cpp(167,34): warning C4244: '=': conversion from 'UINT' to 'FLOAT', possible loss of data
+C:\Users\liams\Desktop\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4.cpp(168,35): warning C4244: '=': conversion from 'UINT' to 'FLOAT', possible loss of data
+  LINK : C:\Users\liams\Desktop\Samsel_Jerome_Dev4\Debug\Samsel_Jerome_Dev4.exe not found or not built by the last incremental link; performing full link
+  Samsel_Jerome_Dev4.vcxproj -> C:\Users\liams\Desktop\Samsel_Jerome_Dev4\Debug\Samsel_Jerome_Dev4.exe

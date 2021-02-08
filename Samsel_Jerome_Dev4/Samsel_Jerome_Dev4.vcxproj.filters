@@ -46,4 +46,8 @@
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="MyVshader.hlsl" />
+    <FxCompile Include="MyPshader.hlsl" />
+  </ItemGroup>
 </Project>

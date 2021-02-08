@@ -13,6 +13,18 @@ ID3D11DeviceContext* myCon;
 ID3D11RenderTargetView* myRtv;
 D3D11_VIEWPORT myPort;
 
+struct MyVertex
+{
+    float xyzw[4];
+    float rgba[4];
+};
+
+ID3D11Buffer* vBuff;
+ID3D11InputLayout* vLayout;
+ID3D11VertexShader* vShader;
+ID3D11PixelShader* pShader;
+
+
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -75,6 +87,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     //release all our d3d11 interfaces
     myRtv->Release();
+    vBuff->Release();
     myCon->Release();
     mySwap->Release();
     myDev->Release();
@@ -169,6 +182,29 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    myPort.TopLeftX = myPort.TopLeftY = 0;
    myPort.MinDepth = 0;
    myPort.MaxDepth = 1;
+
+   MyVertex tri[] =
+   {
+       {{0, 0.5f, 0, 1}, {1, 1, 1, 1}},
+       {{0.5f, -0.5f, 0, 1}, {1, 1, 1, 1}},
+       {{-0.5f, -0.5f, 0, 1}, {1, 1, 1, 1}}
+   };
+
+   D3D11_BUFFER_DESC bDesc;
+   D3D11_SUBRESOURCE_DATA subData;
+   ZeroMemory(&bDesc, sizeof(bDesc));
+   ZeroMemory(&subData, sizeof(subData));
+
+   bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+   bDesc.ByteWidth = sizeof(MyVertex) * 3;
+   bDesc.CPUAccessFlags = 0;
+   bDesc.MiscFlags = 0;
+   bDesc.StructureByteStride = 0;
+   bDesc.Usage = D3D11_USAGE_DEFAULT;
+
+   subData.pSysMem = tri;
+
+   hr = myDev->CreateBuffer(&bDesc, &subData, &vBuff);
 
 
    return TRUE;
