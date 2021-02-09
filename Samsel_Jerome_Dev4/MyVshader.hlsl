@@ -8,9 +8,14 @@ struct InputVertex
 struct OutputVertex
 {
     float4 xyzw : SV_POSITION;
+    float4 rgba : OCOLOR;
 };
 
-float4 main( float4 pos : POSITION ) : SV_POSITION
+OutputVertex main( InputVertex input )
 {
-	return pos;
+    OutputVertex output = (OutputVertex) 0;
+    output.xyzw = input.xyzw;
+    output.rgba = input.rgba;
+    
+    return output;
 }

@@ -7,6 +7,9 @@
 #include <d3d11.h>
 #pragma comment (lib, "d3d11.lib")
 
+#include "MyVshader.csh"
+#include "MyPshader.csh"
+
 ID3D11Device* myDev;
 IDXGISwapChain* mySwap;
 ID3D11DeviceContext* myCon;
@@ -81,6 +84,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
         float color[] = { 0, 1, 1, 1, };
         myCon->ClearRenderTargetView(myRtv, color);
+
+        ID3D11RenderTargetView* tempRtv[] = { myRtv };
+        myCon->OMSetRenderTargets(1, tempRtv, nullptr);
+        myCon->RSSetViewports(1, &myPort);
+        myCon->IASetInputLayout(vLayout);
+
+        UINT strides[] = {sizeof(MyVertex)};
+        UINT offsets[] = { 0 };
+        ID3D11Buffer* tempVB[] = { vBuff };
+        myCon->IASetVertexBuffers(0, 1, tempVB, strides, offsets);
+        myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        myCon->VSSetShader(vShader, 0, 0);
+        myCon->PSSetShader(pShader, 0, 0);
+
+        myCon->Draw(3, 0);
 
         mySwap->Present(0, 0);
     }
@@ -186,8 +205,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    MyVertex tri[] =
    {
        {{0, 0.5f, 0, 1}, {1, 1, 1, 1}},
-       {{0.5f, -0.5f, 0, 1}, {1, 1, 1, 1}},
-       {{-0.5f, -0.5f, 0, 1}, {1, 1, 1, 1}}
+       {{0.5f, -0.5f, 0, 1}, {1, 0, 1, 1}},
+       {{-0.5f, -0.5f, 0, 1}, {1, 1, 0, 1}}
    };
 
    D3D11_BUFFER_DESC bDesc;
@@ -205,6 +224,17 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    subData.pSysMem = tri;
 
    hr = myDev->CreateBuffer(&bDesc, &subData, &vBuff);
+
+   hr = myDev->CreateVertexShader(MyVshader, sizeof(MyVshader), nullptr, &vShader);
+   hr = myDev->CreatePixelShader(MyPshader, sizeof(MyPshader), nullptr, &pShader);
+
+   D3D11_INPUT_ELEMENT_DESC ieDesc[] =
+   {
+       {"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA},
+       {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA},
+   };
+
+   hr = myDev->CreateInputLayout(ieDesc, 2, MyVshader, sizeof(MyVshader), &vLayout);
 
 
    return TRUE;

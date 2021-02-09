@@ -1,4 +1,10 @@
-float4 main() : SV_TARGET
+struct OutputVertex
 {
-	return float4(1, 0, 0, 1);
+    float4 xyzw : SV_POSITION;
+    float4 rgba : OCOLOR;
+};
+
+float4 main(OutputVertex inputPixel) : SV_TARGET
+{
+	return inputPixel.rgba;
 }
