@@ -13,6 +13,10 @@
 #include <DirectXMath.h>
 using namespace DirectX;
 
+#include "MyMeshVshader.csh"
+
+#include "Assets/StoneHenge.h"
+
 ID3D11Device* myDev;
 IDXGISwapChain* mySwap;
 ID3D11DeviceContext* myCon;
@@ -33,6 +37,14 @@ ID3D11VertexShader* vShader;
 ID3D11PixelShader* pShader;
 
 ID3D11Buffer* cBuff;
+ID3D11Buffer* vBuffMesh;
+ID3D11Buffer* iBuffMesh;
+
+ID3D11VertexShader* vMeshShader;
+ID3D11InputLayout* vMeshLayout;
+
+ID3D11Texture2D* zBuffer;
+ID3D11DepthStencilView* zBufferView;
 
 struct WVP
 {
@@ -98,8 +110,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         float color[] = { 0, 1, 1, 1, };
         myCon->ClearRenderTargetView(myRtv, color);
 
+        myCon->ClearDepthStencilView(zBufferView, D3D11_CLEAR_DEPTH, 1, 0);
+
         ID3D11RenderTargetView* tempRtv[] = { myRtv };
-        myCon->OMSetRenderTargets(1, tempRtv, nullptr);
+        myCon->OMSetRenderTargets(1, tempRtv, zBufferView);
         myCon->RSSetViewports(1, &myPort);
         myCon->IASetInputLayout(vLayout);
 
@@ -112,16 +126,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         myCon->VSSetShader(vShader, 0, 0);
         myCon->PSSetShader(pShader, 0, 0);
 
-        myCon->Draw(numVerts, 0);
-
         static float rot = 0; rot += 0.0001f;
         XMMATRIX temp = XMMatrixIdentity();
-        temp = XMMatrixTranslation(0, 0, 3);
+        temp = XMMatrixTranslation(3, 2, -5);
         XMMATRIX temp2 = XMMatrixRotationY(rot);
         temp = XMMatrixMultiply(temp2, temp);
         XMStoreFloat4x4(&MyMatricies.wMatrix, temp);
 
-        temp = XMMatrixLookAtLH({2, 1, -3}, {0, 0, 0}, {0, 1, 0});
+        temp = XMMatrixLookAtLH({1, 5, -10}, {0, 0, 0}, {0, 1, 0});
         XMStoreFloat4x4(&MyMatricies.vMatrix, temp);
         temp = XMMatrixPerspectiveFovLH(3.14f/2.0f, aspectRatio, 0.1f, 1000);
         XMStoreFloat4x4(&MyMatricies.pMatrix, temp);
@@ -134,6 +146,24 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
         ID3D11Buffer* constants[] = { cBuff };
         myCon->VSSetConstantBuffers(0, 1, constants);
+
+        myCon->Draw(numVerts, 0);
+
+        UINT mesh_strides[] = { sizeof(_OBJ_VERT_) };
+        UINT mesh_offsets[] = { 0 };
+        ID3D11Buffer* meshVB[] = { vBuffMesh };
+        myCon->IASetVertexBuffers(0, 1, meshVB, mesh_strides, mesh_offsets);
+        myCon->IASetIndexBuffer(iBuffMesh, DXGI_FORMAT_R32_UINT, 0);
+        myCon->VSSetShader(vMeshShader, 0, 0);
+        myCon->IASetInputLayout(vMeshLayout);
+
+        temp = XMMatrixIdentity();
+        XMStoreFloat4x4(&MyMatricies.wMatrix, temp);
+        hr = myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+        *((WVP*)(gpuBuffer.pData)) = MyMatricies;
+        myCon->Unmap(cBuff, 0);
+
+        myCon->DrawIndexed(2532, 0, 0);
 
         mySwap->Present(0, 0);
     }
@@ -271,7 +301,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    bDesc.CPUAccessFlags = 0;
    bDesc.MiscFlags = 0;
    bDesc.StructureByteStride = 0;
-   bDesc.Usage = D3D11_USAGE_DEFAULT;
+   bDesc.Usage = D3D11_USAGE_IMMUTABLE;
 
    subData.pSysMem = tri;
 
@@ -298,6 +328,46 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    bDesc.Usage = D3D11_USAGE_DYNAMIC;
 
    hr = myDev->CreateBuffer(&bDesc, &subData, &cBuff);
+
+   bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+   bDesc.ByteWidth = sizeof(StoneHenge_data);
+   bDesc.CPUAccessFlags = 0;
+   bDesc.MiscFlags = 0;
+   bDesc.StructureByteStride = 0;
+   bDesc.Usage = D3D11_USAGE_IMMUTABLE;
+
+   subData.pSysMem = StoneHenge_data;
+   hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffMesh);
+
+   bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+   bDesc.ByteWidth = sizeof(StoneHenge_indicies);
+   subData.pSysMem = StoneHenge_indicies;
+   hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffMesh);
+
+   hr = myDev->CreateVertexShader(MyMeshVshader, sizeof(MyMeshVshader), nullptr, &vMeshShader);
+
+   D3D11_INPUT_ELEMENT_DESC meshInputDesc[] =
+   {
+       {"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA},
+       {"TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA},
+       {"NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA},
+   };
+
+   hr = myDev->CreateInputLayout(meshInputDesc, 3, MyMeshVshader, sizeof(MyMeshVshader), &vMeshLayout);
+
+   D3D11_TEXTURE2D_DESC zDesc;
+   ZeroMemory(&zDesc, sizeof(zDesc));
+   zDesc.ArraySize = 1;
+   zDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+   zDesc.Width = swap.BufferDesc.Width;
+   zDesc.Height = swap.BufferDesc.Height;
+   zDesc.Format = DXGI_FORMAT_D32_FLOAT;
+   zDesc.Usage = D3D11_USAGE_DEFAULT;
+   zDesc.MipLevels = 1;
+   zDesc.SampleDesc.Count = 1;
+
+   hr = myDev->CreateTexture2D(&zDesc, nullptr, &zBuffer);
+   hr = myDev->CreateDepthStencilView(zBuffer, nullptr, &zBufferView);
 
    return TRUE;
 }
