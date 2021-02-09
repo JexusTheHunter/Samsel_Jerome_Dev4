@@ -10,23 +10,36 @@
 #include "MyVshader.csh"
 #include "MyPshader.csh"
 
+#include <DirectXMath.h>
+using namespace DirectX;
+
 ID3D11Device* myDev;
 IDXGISwapChain* mySwap;
 ID3D11DeviceContext* myCon;
 ID3D11RenderTargetView* myRtv;
 D3D11_VIEWPORT myPort;
+float aspectRatio = 1;
 
 struct MyVertex
 {
     float xyzw[4];
     float rgba[4];
 };
+unsigned int numVerts = 0;
 
 ID3D11Buffer* vBuff;
 ID3D11InputLayout* vLayout;
 ID3D11VertexShader* vShader;
 ID3D11PixelShader* pShader;
 
+ID3D11Buffer* cBuff;
+
+struct WVP
+{
+    XMFLOAT4X4 wMatrix;
+    XMFLOAT4X4 vMatrix;
+    XMFLOAT4X4 pMatrix;
+}MyMatricies;
 
 #define MAX_LOADSTRING 100
 
@@ -99,7 +112,28 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         myCon->VSSetShader(vShader, 0, 0);
         myCon->PSSetShader(pShader, 0, 0);
 
-        myCon->Draw(3, 0);
+        myCon->Draw(numVerts, 0);
+
+        static float rot = 0; rot += 0.0001f;
+        XMMATRIX temp = XMMatrixIdentity();
+        temp = XMMatrixTranslation(0, 0, 3);
+        XMMATRIX temp2 = XMMatrixRotationY(rot);
+        temp = XMMatrixMultiply(temp2, temp);
+        XMStoreFloat4x4(&MyMatricies.wMatrix, temp);
+
+        temp = XMMatrixLookAtLH({2, 1, -3}, {0, 0, 0}, {0, 1, 0});
+        XMStoreFloat4x4(&MyMatricies.vMatrix, temp);
+        temp = XMMatrixPerspectiveFovLH(3.14f/2.0f, aspectRatio, 0.1f, 1000);
+        XMStoreFloat4x4(&MyMatricies.pMatrix, temp);
+
+        D3D11_MAPPED_SUBRESOURCE gpuBuffer;
+        HRESULT hr = myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+        *((WVP*)(gpuBuffer.pData)) = MyMatricies;
+        //memcpy(gpuBuffer.pData, &MyMatricies, sizeof(WVP));
+        myCon->Unmap(cBuff, 0);
+
+        ID3D11Buffer* constants[] = { cBuff };
+        myCon->VSSetConstantBuffers(0, 1, constants);
 
         mySwap->Present(0, 0);
     }
@@ -109,6 +143,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     vBuff->Release();
     myCon->Release();
     mySwap->Release();
+    vShader->Release();
+    pShader->Release();
+    vLayout->Release();
     myDev->Release();
 
 
@@ -184,6 +221,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    swap.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
    swap.SampleDesc.Count = 1;
 
+   aspectRatio = swap.BufferDesc.Width / float(swap.BufferDesc.Height);
 
    HRESULT hr;
    hr = D3D11CreateDeviceAndSwapChain(   NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, D3D11_CREATE_DEVICE_DEBUG,
@@ -204,10 +242,24 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    MyVertex tri[] =
    {
-       {{0, 0.5f, 0, 1}, {1, 1, 1, 1}},
-       {{0.5f, -0.5f, 0, 1}, {1, 0, 1, 1}},
-       {{-0.5f, -0.5f, 0, 1}, {1, 1, 0, 1}}
+       {{ 0,      1.0f,   0,     1}, {1, 1, 1, 1}},
+       {{ 0.25f, -0.25f, -0.25f, 1}, {1, 0, 1, 1}},
+       {{-0.25f, -0.25f, -0.25f, 1}, {1, 1, 0, 1}},
+
+       {{ 0,      1.0f,   0,     1}, {1, 1, 1, 1}},
+       {{ 0.25f, -0.25f,  0.25f, 1}, {1, 0, 1, 1}},
+       {{ 0.25f, -0.25f, -0.25f, 1}, {1, 1, 0, 1}},
+
+       {{ 0,      1.0f,   0,     1}, {1, 1, 1, 1}},
+       {{-0.25f, -0.25f,  0.25f, 1}, {1, 0, 1, 1}},
+       {{ 0.25f, -0.25f,  0.25f, 1}, {1, 1, 0, 1}},
+
+       {{ 0,      1.0f,   0,     1}, {1, 1, 1, 1}},
+       {{-0.25f, -0.25f, -0.25f, 1}, {1, 0, 1, 1}},
+       {{-0.25f, -0.25f,  0.25f, 1}, {1, 1, 0, 1}}
    };
+
+   numVerts = ARRAYSIZE(tri);
 
    D3D11_BUFFER_DESC bDesc;
    D3D11_SUBRESOURCE_DATA subData;
@@ -215,7 +267,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    ZeroMemory(&subData, sizeof(subData));
 
    bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-   bDesc.ByteWidth = sizeof(MyVertex) * 3;
+   bDesc.ByteWidth = sizeof(MyVertex) * numVerts;
    bDesc.CPUAccessFlags = 0;
    bDesc.MiscFlags = 0;
    bDesc.StructureByteStride = 0;
@@ -236,6 +288,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    hr = myDev->CreateInputLayout(ieDesc, 2, MyVshader, sizeof(MyVshader), &vLayout);
 
+   ZeroMemory(&bDesc, sizeof(bDesc));
+
+   bDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+   bDesc.ByteWidth = sizeof(WVP);
+   bDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+   bDesc.MiscFlags = 0;
+   bDesc.StructureByteStride = 0;
+   bDesc.Usage = D3D11_USAGE_DYNAMIC;
+
+   hr = myDev->CreateBuffer(&bDesc, &subData, &cBuff);
 
    return TRUE;
 }
