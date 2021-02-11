@@ -1,4 +1,4 @@
 ﻿  Samsel_Jerome_Dev4.cpp
-C:\Users\liams\Desktop\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4.cpp(267,34): warning C4244: '=': conversion from 'UINT' to 'FLOAT', possible loss of data
-C:\Users\liams\Desktop\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4.cpp(268,35): warning C4244: '=': conversion from 'UINT' to 'FLOAT', possible loss of data
+C:\Users\liams\Desktop\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4.cpp(280,34): warning C4244: '=': conversion from 'UINT' to 'FLOAT', possible loss of data
+C:\Users\liams\Desktop\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4\Samsel_Jerome_Dev4.cpp(281,35): warning C4244: '=': conversion from 'UINT' to 'FLOAT', possible loss of data
   Samsel_Jerome_Dev4.vcxproj -> C:\Users\liams\Desktop\Samsel_Jerome_Dev4\Debug\Samsel_Jerome_Dev4.exe

@@ -31,6 +31,15 @@ struct MyVertex
 };
 unsigned int numVerts = 0;
 
+struct CameraChange
+{
+    float posX, posY, posZ, lookX, lookY, lookZ, yaw, pitch;
+};
+
+CameraChange cInput = { 0.0f, 5.0f, 0.0f,
+                        0.0f, 5.0f, 1.0f, 
+                        0.0f, 0.0f };
+
 ID3D11Buffer* vBuff;
 ID3D11InputLayout* vLayout;
 ID3D11VertexShader* vShader;
@@ -65,6 +74,8 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+CameraChange CheckCamera(CameraChange);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -133,7 +144,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         temp = XMMatrixMultiply(temp2, temp);
         XMStoreFloat4x4(&MyMatricies.wMatrix, temp);
 
-        temp = XMMatrixLookAtLH({1, 5, -10}, {0, 0, 0}, {0, 1, 0});
+        cInput = CheckCamera(cInput);
+
+        temp = XMMatrixLookAtLH({cInput.posX, cInput.posY, cInput.posZ}, {cInput.lookX, cInput.lookY, cInput .lookZ}, {0, 1, 0});
         XMStoreFloat4x4(&MyMatricies.vMatrix, temp);
         temp = XMMatrixPerspectiveFovLH(3.14f/2.0f, aspectRatio, 0.1f, 1000);
         XMStoreFloat4x4(&MyMatricies.pMatrix, temp);
@@ -438,4 +451,82 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return (INT_PTR)FALSE;
+}
+
+CameraChange CheckCamera(CameraChange input)
+{
+    CameraChange output = input;
+    if (GetAsyncKeyState(0x57))
+    {
+        output.posZ += 0.01f;
+        output.lookZ += 0.01f;
+    }
+    if (GetAsyncKeyState(0x53))
+    {
+        output.posZ -= 0.01f;
+        output.lookZ -= 0.01f;
+    }
+    if (GetAsyncKeyState(0x41))
+    {
+        output.posX -= 0.01f;
+        output.lookX -= 0.01f;
+    }
+    if (GetAsyncKeyState(0x44))
+    {
+        output.posX += 0.01f;
+        output.lookX += 0.01f;
+    }
+
+    //struct currentPitch
+    //{
+    //    float relativeY = 0 , relativeX = 1;
+    //};
+
+    //currentPitch cPit;
+
+    //if (GetAsyncKeyState(VK_UP))
+    //{
+    //    if (output.pitch >= 90.0f)
+    //    {
+    //        output.pitch = 90.0f;
+    //    }
+    //}
+    //if (GetAsyncKeyState(VK_DOWN))
+    //{
+    //    if (output.pitch <= -90.0f)
+    //    {
+    //        output.pitch = -90.0f;
+    //    }
+    //}
+
+    //output.pitch = 45.0f;
+
+    //float pitch = output.pitch / 90.0f;
+
+    //if (output.pitch > 0)
+    //{
+    //    cPit.relativeY = pitch;
+    //    cPit.relativeX = 1 - pitch;
+    //}
+
+
+
+    if (GetAsyncKeyState(VK_RIGHT))
+    {
+        if (output.yaw > 360.0f)
+        {
+            output.yaw -= 360.0f;
+        }
+    }
+    if (GetAsyncKeyState(VK_LEFT))
+    {
+        if (output.yaw < 360.0f)
+        {
+            output.yaw += 360.0f;
+        }
+    }
+
+
+
+    return output;
 }
